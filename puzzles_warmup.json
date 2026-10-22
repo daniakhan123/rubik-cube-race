@@ -1,0 +1,54 @@
+[
+  {
+    "id": 1,
+    "scramble": [
+      "L",
+      "B",
+      "U2"
+    ],
+    "state": "UUBUUBRRRULLRRDRRFBBBUFFUFFFDDFDDLLLRRDULLBLLUFFBBBDDD",
+    "shortest": 3
+  },
+  {
+    "id": 2,
+    "scramble": [
+      "F'",
+      "B2",
+      "F2",
+      "R2"
+    ],
+    "state": "DDRUUDLLULRULRULRUFFBFFBFFBRRDDDUUULRLDRLDRLDFBBFBBFBB",
+    "shortest": 3
+  },
+  {
+    "id": 3,
+    "scramble": [
+      "L2",
+      "B",
+      "U'"
+    ],
+    "state": "RUURUURDDBFFRRDRRUULLBFFBFFUDDUDDLLLBBBULLDLLRRDBBBFFF",
+    "shortest": 3
+  },
+  {
+    "id": 4,
+    "scramble": [
+      "F'",
+      "B2",
+      "R2",
+      "B2"
+    ],
+    "state": "RUUUUDRRULRRLRRLRRFFBFFBFFBLLDDDULDDDLUDLUDLUBBFBBFBBF",
+    "shortest": 4
+  },
+  {
+    "id": 5,
+    "scramble": [
+      "U2",
+      "L",
+      "R2"
+    ],
+    "state": "BUDBUDFUDRRRRRRLLLUBBUFBUFFBDUFDUFDULLRLLRLLRFFDFBDBBD",
+    "shortest": 3
+  }
+]

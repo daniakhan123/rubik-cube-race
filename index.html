@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Rubik's Cube Race</title>
+<style>
+  body { font-family: system-ui, sans-serif; background:#0f172a; color:#e2e8f0; margin:0; padding:70px 20px 20px; }
+  #id { position:fixed; top:0; left:0; right:0; background:#1e293b; padding:10px 20px; font-weight:700; z-index:10; border-bottom:2px solid #38bdf8; }
+  h1 { margin:10px 0; }
+  .bar { display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap; }
+  button, select { padding:8px 14px; border-radius:6px; border:0; font-size:15px; }
+  button { background:#38bdf8; font-weight:700; cursor:pointer; }
+  #grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(380px,1fr)); gap:14px; }
+  .panel { background:#1e293b; border-radius:12px; padding:14px; border:3px solid transparent; }
+  .panel.solved { border-color:#22c55e; } .panel.ran_out { border-color:#ef4444; }
+  .head { display:flex; justify-content:space-between; font-weight:700; font-size:18px; }
+  .tag { font-size:11px; background:#334155; padding:2px 8px; border-radius:10px; }
+  .body { display:flex; gap:14px; margin-top:10px; align-items:center; }
+  .net { display:grid; grid-template-columns:repeat(12,18px); grid-template-rows:repeat(9,18px); gap:2px; }
+  .net div { width:18px; height:18px; border-radius:3px; }
+  .stats { font-family:monospace; font-size:15px; line-height:1.6; }
+  .status { margin-top:8px; font-weight:700; }
+  .hist { margin-top:6px; font-size:12px; color:#94a3b8; word-break:break-all; max-height:48px; overflow:auto; }
+  table { border-collapse:collapse; margin-top:14px; width:100%; background:#1e293b; }
+  th, td { padding:8px 12px; border-bottom:1px solid #334155; text-align:right; } th:first-child, td:first-child { text-align:left; }
+</style>
+</head>
+<body>
+<div id="id">Dania Khan | Roll No: 23k-0072 | AI Engineering - Assignment 02</div>
+<h1>RUBIK'S CUBE RACE</h1>
+<div class="bar">
+  <select id="pz"></select>
+  <button onclick="start()">Run Benchmark</button>
+  <button onclick="showStats()">Show Statistics</button>
+  <span id="info"></span>
+</div>
+<div id="grid"></div>
+<div id="stats"></div>
+
+<script>
+const COL = {U:'#ffffff', R:'#ef4444', F:'#22c55e', D:'#facc15', L:'#f97316', B:'#3b82f6'};
+const OFF = {U:[0,3], L:[3,0], F:[3,3], R:[3,6], B:[3,9], D:[6,3]}; // net layout
+const ORDER = "URFDLB";
+
+function net(s) {
+  let h = `<div class="net">`;
+  const cells = Array(108).fill(null);
+  for (let f = 0; f < 6; f++) {
+    const [r0, c0] = OFF[ORDER[f]];
+    for (let i = 0; i < 9; i++)
+      cells[(r0 + Math.floor(i / 3)) * 12 + c0 + (i % 3)] = s[f * 9 + i];
+  }
+  for (const c of cells) h += c ? `<div style="background:${COL[c]}"></div>` : `<div></div>`;
+  return h + `</div>`;
+}
+
+const fmt = t => { const m = Math.floor(t / 60); return m + ":" + (t % 60).toFixed(2).padStart(5, "0"); };
+const LABEL = { waiting: "waiting...", thinking: "thinking...", solved: "SOLVED ✓", ran_out: "RAN OUT OF MOVES — NOT SOLVED" };
+
+async function load() {
+  const p = await (await fetch("/api/puzzles")).json();
+  document.getElementById("pz").innerHTML = p.map(x =>
+    `<option value="${x.id}">Puzzle ${x.id} (shortest ${x.shortest})</option>`).join("");
+}
+async function start() {
+  await fetch("/api/start/" + document.getElementById("pz").value, { method: "POST" });
+  document.getElementById("stats").innerHTML = "";
+}
+async function poll() {
+  const s = await (await fetch("/api/state")).json();
+  if (s.puzzle) document.getElementById("info").textContent =
+    `Puzzle ${s.puzzle.id} | scramble: ${s.puzzle.scramble.join(" ")} | shortest: ${s.puzzle.shortest}`;
+  document.getElementById("grid").innerHTML = Object.entries(s.models).map(([n, m]) => `
+    <div class="panel ${m.status}">
+      <div class="head"><span>${n}</span><span class="tag">${m.status}</span></div>
+      <div class="body">${net(m.state)}
+        <div class="stats">TIME<br><b>${fmt(m.elapsed)}</b><br>MOVES<br><b>${m.moves}</b><br>CURRENT<br><b>${m.current ?? "-"}</b></div>
+      </div>
+      <div class="status">${LABEL[m.status]}${m.invalid ? " (invalid: " + m.invalid + ")" : ""}</div>
+      <div class="hist">${m.history.join(" ")}</div>
+    </div>`).join("");
+}
+async function showStats() {
+  const r = await (await fetch("/api/results")).json();
+  const f = (v, d = 2) => v == null ? "-" : v.toFixed(d);
+  let h = `<h2>Statistical Benchmark</h2><table><tr><th>Model</th><th>Success %</th><th>Avg latency/move (s)</th><th>Avg total time (s)</th><th>Avg moves</th><th>Optimal gap</th><th>Invalid</th></tr>`;
+  for (const [n, v] of Object.entries(r))
+    h += `<tr><td>${n}</td><td>${f(v.success_rate, 0)}</td><td>${f(v.avg_latency_per_move)}</td><td>${f(v.avg_total_time, 1)}</td><td>${f(v.avg_moves_all, 1)}</td><td>${f(v.avg_gap_solved)}</td><td>${v.invalid_total}</td></tr>`;
+  document.getElementById("stats").innerHTML = h + "</table>";
+  window.scrollTo(0, document.body.scrollHeight);
+}
+load(); setInterval(poll, 700);
+</script>
+</body>
+</html>
